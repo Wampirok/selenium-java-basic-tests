@@ -5,15 +5,14 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
+import org.testng.annotations.*;
 
 public class LoginTest {
 
     WebDriver driver;
+    private final String BASE_URL = "https://demowebshop.tricentis.com";
 
-    @BeforeClass
+    @BeforeMethod
     public void setup() {
         WebDriverManager.chromedriver().setup();
         driver = new ChromeDriver();
@@ -21,22 +20,58 @@ public class LoginTest {
     }
 
     @Test
-    public void successfulLoginTest() {
-        driver.get("https://www.saucedemo.com/");
+    public void registerAndLoginTest() {
 
-        driver.findElement(By.id("user-name"))
-                .sendKeys("standard_user");
-        driver.findElement(By.id("password"))
-                .sendKeys("secret_sauce");
-        driver.findElement(By.id("login-button"))
-                .click();
+        driver.get(BASE_URL+"/register");
 
-        String currentUrl = driver.getCurrentUrl();
-        Assert.assertTrue(currentUrl.contains("inventory"),
-                "Login failed – inventory page not opened");
+        String email = "test" + System.currentTimeMillis() + "@gmail.com";
+
+        driver.findElement(By.id("gender-male")).click();
+        driver.findElement(By.id("FirstName")).sendKeys("Test");
+        driver.findElement(By.id("LastName")).sendKeys("Testing");
+        driver.findElement(By.id("Email")).sendKeys(email);
+        driver.findElement(By.id("Password")).sendKeys("Test123!");
+        driver.findElement(By.id("ConfirmPassword")).sendKeys("Test123!");
+        driver.findElement(By.id("register-button")).click();
+
+        driver.findElement(By.className("ico-logout")).click();
+
+        driver.get(BASE_URL+"/login");
+
+        driver.findElement(By.id("Email")).sendKeys(email);
+        driver.findElement(By.id("Password")).sendKeys("Test123!");
+        driver.findElement(By.cssSelector("input.login-button")).click();
+
+        Assert.assertTrue(
+                driver.findElement(By.className("ico-logout")).isDisplayed()
+        );
     }
 
-    @AfterClass
+    @Test
+    public void loginWithInvalidCredentials() {
+
+        driver.get(BASE_URL+"/login");
+
+        driver.findElement(By.id("Email"))
+                .sendKeys("wrongemail@test.com");
+
+        driver.findElement(By.id("Password"))
+                .sendKeys("WrongPassword123");
+
+        driver.findElement(By.cssSelector("input.login-button"))
+                .click();
+
+        String errorMessage = driver.findElement(By.className("validation-summary-errors"))
+                .getText();
+
+        Assert.assertTrue(
+                errorMessage.contains("Login was unsuccessful"),
+                "Error message was not displayed for invalid login"
+        );
+    }
+
+
+    @AfterMethod
     public void teardown() {
         driver.quit();
     }
